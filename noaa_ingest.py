@@ -22,6 +22,7 @@ DOWNLOAD_DELAY = 1.0
 
 RAW_TABLE = "noaa_hourly_raw"
 TEMP_TABLE = "noaa_hourly_temp"
+AVG_TABLE  = "noaa_hourly_avg"
 
 
 # Logging
@@ -129,6 +130,41 @@ def load_noaa_hourly():
             con.close()
             logger.info("Closed DuckDB (NOAA)")
 
+def build_noaa_hourly_avg():
+    con = None
+    try:
+        con = duckdb.connect(str(DB_PATH), read_only=False)
+        logger.info("Connected to DuckDB for hourly avg build")
+
+        # Drop old table if it exists
+        con.execute(f"DROP TABLE IF EXISTS {AVG_TABLE};")
+        logger.info(f"Dropped {AVG_TABLE} if it existed")
+
+        logger.info(f"Creating {AVG_TABLE} from {TEMP_TABLE}")
+        con.execute(f"""
+            CREATE TABLE {AVG_TABLE} AS
+            SELECT
+                station,
+                date_trunc('hour', ts_utc) AS hour_utc,
+                AVG(temp_C) AS temp_C
+            FROM {TEMP_TABLE}
+            GROUP BY station, hour_utc
+            ORDER BY station, hour_utc;
+        """)
+
+        avg_count = con.execute(f"SELECT COUNT(*) FROM {AVG_TABLE};").fetchone()[0]
+        logger.info(f"[counts] {AVG_TABLE}: {avg_count}")
+        print(f"{AVG_TABLE}: {avg_count} rows")
+
+    except Exception as e:
+        print(f"NOAA hourly avg error: {e}")
+        logger.error(f"NOAA hourly avg error: {e}")
+    finally:
+        if con is not None:
+            con.close()
+            logger.info("Closed DuckDB (NOAA hourly avg)")
+
 if __name__ == "__main__":
     load_noaa_hourly()
+    build_noaa_hourly_avg()
 
