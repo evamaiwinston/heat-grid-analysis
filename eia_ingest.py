@@ -12,8 +12,15 @@ DB_PATH = Path("heatgrid.duckdb")
 EIA_RAW_TABLE = "eia_hourly_raw"
 EIA_HOURLY_TABLE = "eia_load_hourly"
 
-PARENTS = ["PJM", "ISONE"]  
-SUBBAS = ["DOM", "4007", "4008"] # Dc area and New england 
+PARENT_SUBBAS = {
+    "PJM":  ["DOM"],            # DC / NOVA
+    "ISNE": ["4007", "4008"],   # Western/Central MA + Northeast MA
+    "SERC": [],                 # Southeast, no subbas
+    "NYIS": ["ZONJ", "ZONK"],   # NYC + Long Island
+    "ERCO": ["NCEN", "WEST"],   # Texas: North Central + West
+    "CISO": ["SCE"],            # Southern California Edison (LA area)
+    "NWPP": []                  # Northwest Power Pool, no subbas
+}
 
 START = "2019-01-01T00"
 END   = "2025-08-27T04"
@@ -34,54 +41,61 @@ logger.info("--------- New EIA run ---------")
 
 
 # Fetch from API
-def fetch_eia_data(subbas, start, end):
+def fetch_eia_data(parent_subbas: dict, start: str, end: str):
     if not EIA_API_KEY:
         raise RuntimeError("EIA_API_KEY is not set in the environment")
     
     all_rows = []
-    offset = 0
-    page_size = 5000
 
-    logger.info(f"[EIA] Fetching subbas={subbas} from {start} to {end}")
-    print(f"Fetching EIA data for subbas={subbas} ...")
+    for parent, subbas in parent_subbas.items():
+        subba_list = subbas if subbas else [None]
 
-    while True:
-        params = {
-            "api_key": EIA_API_KEY,
-            "frequency": "hourly",
-            "data[0]": "value",
-            "start": start,
-            "end": end,
-            "sort[0][column]": "period",
-            "sort[0][direction]": "asc",
-            "offset": offset,
-            "length": page_size,
-        }
+        for sub in subba_list:
+            offset = 0
+            page_size = 5000
 
-        for i, s in enumerate(subbas):
-            params[f"facets[subba][{i}]"] = s
+    
+            logger.info(f"[EIA] Fetching parent={parent}, subba={sub} from {start} to {end}")
+            print(f"Fetching EIA data for sub={sub} ...")
+
+            while True:
+                params = {
+                    "api_key": EIA_API_KEY,
+                    "frequency": "hourly",
+                    "data[0]": "value",
+                    "start": start,
+                    "end": end,
+                    "sort[0][column]": "period",
+                    "sort[0][direction]": "asc",
+                    "offset": offset,
+                    "length": page_size,
+                }
+
+                params["facets[parent][0]"] = parent
+                if sub is not None:
+                    params["facets[subba][0]"] = sub
 
 
-        logger.info(f"[EIA] Request offset={offset}")
-        if offset % 100000 == 0:
-            print(f"[EIA] Progress: offset={offset} rows fetched")
-        r = requests.get(BASE_URL, params=params, timeout=30)
-        r.raise_for_status()
-        payload = r.json()
+                logger.info(f"[EIA] Request offset={offset}")
+                if offset % 10000 == 0:
+                    print(f"[EIA] Progress: offset={offset} rows fetched")
+                r = requests.get(BASE_URL, params=params, timeout=30)
+                r.raise_for_status()
+                payload = r.json()
 
-        rows = payload.get("response", {}).get("data", [])
-        if not rows:
-            logger.info("[EIA] No more rows, stopping pagination")
-            break
+                rows = payload.get("response", {}).get("data", [])
+                if not rows:
+                    logger.info("[EIA] No more rows, stopping pagination")
+                    break
 
-        all_rows.extend(rows)
-        logger.info(f"[EIA] Retrieved {len(rows)} rows (total so far: {len(all_rows)})")
+                all_rows.extend(rows)
+                logger.info(f"[EIA] Retrieved {len(rows)} rows (total so far: {len(all_rows)})")
 
-        if len(rows) < page_size:
-            # last page
-            break
+                if len(rows) < page_size:
+                    # last page
+                    break
 
-        offset += page_size
+                offset += page_size
 
     logger.info(f"[EIA] Total rows fetched: {len(all_rows)}")
     return all_rows
@@ -91,7 +105,7 @@ def load_eia_to_duckdb():
     con = None
     try:
 
-        rows = fetch_eia_data(SUBBAS, START, END)
+        rows = fetch_eia_data(PARENT_SUBBAS, START, END)
         if not rows:
             print("No EIA rows returned. Check API key and params")
             return
