@@ -15,7 +15,7 @@ EIA_HOURLY_TABLE = "eia_load_hourly"
 PARENTS = ["PJM", "ISNE"] # Dc area and New england 
 
 START = "2019-01-01T00"
-END   = "2024-12-31T23"
+END   = "2025-08-27T04"
 
 BASE_URL = "https://api.eia.gov/v2/electricity/rto/region-sub-ba-data/data/"
 
@@ -154,16 +154,6 @@ def load_eia_to_duckdb():
         print(f"{EIA_RAW_TABLE}:     {raw_count}")
         print(f"{EIA_HOURLY_TABLE}: {hourly_count}")
 
-        sample = con.execute(f"""
-            SELECT *
-            FROM {EIA_HOURLY_TABLE}
-            ORDER BY region, hour_utc
-            LIMIT 10;
-        """).fetchall()
-
-        print("\nSample hourly load rows:")
-        for row in sample:
-            print(row)
 
     except Exception as e:
         print(f"EIA load error: {e}")

@@ -11,7 +11,7 @@ STATIONS = {
     "IAD": "72403093738",   # Dulles
     "BOS": "72509014739"    # Logan
 }
-YEARS = [2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024] #expand to YEARS = list(range(2015, 2025))
+YEARS = [2019, 2020, 2021, 2022, 2023, 2024, 2025]
 
 BASE_URL = "https://www.ncei.noaa.gov/data/global-hourly/access/{year}/{station}.csv"
 
