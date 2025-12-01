@@ -15,11 +15,9 @@ EIA_HOURLY_TABLE = "eia_load_hourly"
 PARENT_SUBBAS = {
     "PJM":  ["DOM"],            # DC / NOVA
     "ISNE": ["4007", "4008"],   # Western/Central MA + Northeast MA
-    "SERC": [],                 # Southeast, no subbas
     "NYIS": ["ZONJ", "ZONK"],   # NYC + Long Island
-    "ERCO": ["NCEN", "WEST"],   # Texas: North Central + West
+    "ERCO": ["NCEN"],           # Texas: North Central
     "CISO": ["SCE"],            # Southern California Edison (LA area)
-    "NWPP": []                  # Northwest Power Pool, no subbas
 }
 
 START = "2019-01-01T00"
