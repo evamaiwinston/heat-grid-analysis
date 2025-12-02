@@ -6,7 +6,7 @@ Karen Guzman and Eva Winston
 We are using National Oceanic and Atmospheric Administration (NOAA) and Environmental Impact Assessment (EIA) data to correlate heatwaves and electricity usage across 4 different regions: Washington Dulles (IAD), Boston (BOS), Los Angeles (LAX), and New York City (NYC).
 
 EIA API: https://www.eia.gov/opendata/browser/electricity/rto/region-sub-ba-data
-NOAA API: https://www.ncei.noaa.gov/data/global-hourly/access/
+NOAA Source: https://www.ncei.noaa.gov/data/global-hourly/access/
 
 ### Challenges and Solutions
 We encountered several challenges with finding data on our original project idea. Our initial goal was to correlate weather trends with electricity data to analyze the impact of data centers on excessive electricity usage. However, obtaining this precise location information on data centers was far more difficult than expected. Most public sources did not provide the details we needed for our project and as a solution, we decided to toward analyzing broader regional patterns rather than isolating specific data center locations. 
